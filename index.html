@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>symfony</title>
+	<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+	<!--<script src="https://cdn.bootcss.com/marked/0.7.0/marked.min.js"></script>-->
+	<script src="js/marked.js"></script>
+	<script src="js/mermaid.js"></script>
+	<!--<script src="https://cdn.bootcss.com/mermaid/8.2.3/mermaid.min.js"></script>-->
+	<script src="https://cdn.bootcss.com/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTM"></script>
+	<script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+	<!--<script src="https://cdn.bootcss.com/showdown/1.9.0/showdown.min.js"></script>-->
+</head>
+<body>
+<p>2^10^</p>
+<div class="mermaid">
+	graph TD
+	A[Christmas] -->|Get money| B(Go shopping)
+	B --> C{Let me think}
+	C -->|One| D[Laptop]
+	C -->|Two| E[iPhone]
+	C -->|Three| F[Car]
+
+</div>
+	<div id="content"></div>
+	<script type="text/x-mathjax-config">
+		MathJax.Hub.Config({
+		 tex2jax: {inlineMath: [['$','$'], ['\(','\)']]}
+		});
+	</script>
+	<script>
+		//document.getElementById('content').innerHTML =
+        //marked('# Marked in browser\n\nRendered by **marked**.');
+		/*$.ajax({
+			url: "content/test1.md",
+			dataType: 'text',
+			success: function(data, status) {
+				console.log(data)
+				$("#content").html(marked(response));
+			},
+			error: function(data, status) {
+				console.log(data)
+			}
+		});*/
+		hljs.initHighlightingOnLoad();
+		mermaid.initialize({startOnLoad: true,theme: 'neutral'});
+		$(function(){
+			$.get("content/test1.md", function(response, status, xhr){
+				///var converter = new showdown.Converter();
+				//var html = converter.makeHtml(response);
+				$("#content").html(marked(response));
+				//$("#content").html(html);
+			});
+		});
+
+		/*$.get("content/11.txt", function(response, status, xhr){
+			$("#content").html(response);
+		});*/
+	</script>
+</body>
+</html>
