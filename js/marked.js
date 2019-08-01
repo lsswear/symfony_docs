@@ -553,7 +553,8 @@
         sup:/^\^{1}([^\s\^])\^{1}/,
         sub:/^-{1}([^\s-])-{1}/,
         del: noop,
-        text:/^(`+|[^`])(?:[\s\S]*?(?:(?=[-\^_\\<!\[`*]|\b_|$)|[^ ](?= {2,}\n))|(?= {2,}\n))/,
+        text:/^(`+|[^`])(?:[\s\S]*?(?:(?=[-\^_\\\$<!\[`*]|\b_|$)|[^ ](?= {2,}\n))|(?= {2,}\n))/,
+        katex:/^\${2}([^$]+(?=\${2}))\${2}/,
         //text: /^([\s])(?=[-\^\\<!\[`*]|\b_|$)|[^ ](?= {2,}\n)/
     };
 
@@ -627,7 +628,7 @@
         url: /^((?:ftp|https?):\/\/|www\.)(?:[a-zA-Z0-9\-]+\.?)+[^\s<]*|^email/,
         _backpedal: /(?:[^?!.,:;*_~()&]+|\([^)]*\)|&(?![a-zA-Z0-9]+;$)|[?!.,:;*_~)]+(?!$))+/,
         del: /^~+(?=\S)([\s\S]*?\S)~+/,
-        text: /^(`+|[^`])(?:[\s\S]*?(?:(?=[-\^_\\<!\[`*~]|\b_|https?:\/\/|ftp:\/\/|www\.|$)|[^ ](?= {2,}\n)|[^a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-](?=[a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-]+@))|(?= {2,}\n|[a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-]+@))/
+        text: /^(`+|[^`])(?:[\s\S]*?(?:(?=[-\^_\\\$<!\[`*~]|\b_|https?:\/\/|ftp:\/\/|www\.|$)|[^ ](?= {2,}\n)|[^a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-](?=[a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-]+@))|(?= {2,}\n|[a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-]+@))/
     });
 
     inline.gfm.url = edit(inline.gfm.url, 'i')
@@ -869,8 +870,16 @@
                 out += this.renderer.sub(this.output(cap[1]));
                 continue;
             }
+            //katex
+            if (cap = this.rules.katex.exec(src)) {
+                src = src.substring(cap[0].length);
+                //console.info('src',src);
+                out += this.renderer.katex(this.output(cap[1]));
+                continue;
+            }
             // text
             if (cap = this.rules.text.exec(src)) {
+                //console.info('text_src',src);
                 //console.info('text_rule',this.rules.text);
                 //console.info('text',cap);
                 src = src.substring(cap[0].length);
@@ -980,7 +989,9 @@
         return '<pre><code class="'
             + this.options.langPrefix
             + escape(lang, true)
-            + '">'
+            /*+ '" id="'
+            + escape(lang, true)*/
+            +'">'
             + (escaped ? code : escape(code, true))
             + '</code></pre>\n';
     };
@@ -1118,7 +1129,15 @@
         //console.log(text);
         return '<sub>' + text + '</sub>';
     };
-
+    Renderer.prototype.katex = function(text){
+        var katexStr = '';
+        if(katex){
+          katexStr = katex.renderToString( text, {
+              throwOnError: false
+          });
+        }
+        return katexStr;
+    };
 
     /**
      * TextRenderer

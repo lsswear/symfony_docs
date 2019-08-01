@@ -9,25 +9,24 @@
 	<script src="js/mermaid.js"></script>
 	<!--<script src="https://cdn.bootcss.com/mermaid/8.2.3/mermaid.min.js"></script>-->
 	<script src="https://cdn.bootcss.com/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTM"></script>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css" integrity="sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j" crossorigin="anonymous">
+
+	<!-- The loading of KaTeX is deferred to speed up page rendering -->
+	<script defer src="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.js" integrity="sha384-9Nhn55MVVN0/4OFx7EE5kpFBPsEMZxKTCnA+4fqDmg12eCTqGi6+BB2LjY8brQxJ" crossorigin="anonymous"></script>
+
+	<!-- To automatically render math in text elements, include the auto-render extension: -->
+	<script defer src="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+			onload="document.getElementById('katex');"></script>
 	<script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
 	<!--<script src="https://cdn.bootcss.com/showdown/1.9.0/showdown.min.js"></script>-->
 </head>
 <body>
-<p>2^10^</p>
-<div class="mermaid">
-	graph TD
-	A[Christmas] -->|Get money| B(Go shopping)
-	B --> C{Let me think}
-	C -->|One| D[Laptop]
-	C -->|Two| E[iPhone]
-	C -->|Three| F[Car]
-
-</div>
+	<div id="test"></div>
 	<div id="content"></div>
 	<script type="text/x-mathjax-config">
-		MathJax.Hub.Config({
+		/*MathJax.Hub.Config({
 		 tex2jax: {inlineMath: [['$','$'], ['\(','\)']]}
-		});
+		});*/
 	</script>
 	<script>
 		//document.getElementById('content').innerHTML =
@@ -43,9 +42,14 @@
 				console.log(data)
 			}
 		});*/
-		hljs.initHighlightingOnLoad();
 		mermaid.initialize({startOnLoad: true,theme: 'neutral'});
+		hljs.initHighlightingOnLoad();
 		$(function(){
+			/*katex.render(String.raw`c = \pm\sqrt{a^2 + b^2}`,document.getElementById('test'), {
+				throwOnError: false
+			});*/
+			/*renderMathInElement(katex'), {
+			});*/
 			$.get("content/test1.md", function(response, status, xhr){
 				///var converter = new showdown.Converter();
 				//var html = converter.makeHtml(response);

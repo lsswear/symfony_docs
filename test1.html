@@ -5,7 +5,7 @@
     <title>Title</title>
 </head>
 <body>
-<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<!--<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>-->
 <script>
    //var test1 =
    //        /^_([^\s_])_(?!_)
@@ -21,10 +21,13 @@
    //var test1 = /^_([^\s_])_(?!_)|^\*([^\s*<\[])\*(?!\*)|^_([^\s<][\s\S]*?[^\s_])_(?!_|[^\spunctuation])|^_([^\s_<][\s\S]*?[^\s])_(?!_|[^\spunctuation])|^\*([^\s<"][\s\S]*?[^\s\*])\*(?!\*|[^\spunctuation])|^\*([^\s*"<\[][\s\S]*?[^\s])\*(?!\*)/;
   //var test1Str = "_2_";
    var test1Str = "2^5^";
+   var test2Str = "$$c++$$";
    var test1 = /\^{1}([\S]{1,10})\^{1}/;
     var result = test1.exec(test1Str);
-   var test2 =  /^(`+|[^`])(?:[\\s\\S]*?(?:(?=[\\\\<!\\[`*~]|\\b_|https?:\\/\\/|ftp:\\/\\/|www\\.|$)|[^ ](?= {2,}\\n)|[^a-zA-Z0-9.!#$%&'*+\\/=?_`{\\|}~-](?=[a-zA-Z0-9.!#$%&'*+\\/=?_`{\\|}~-]+@))|(?= {2,}\\n|[a-zA-Z0-9.!#$%&'*+\\/=?_`{\\|}~-]+@))/;
-    result = test2.exec(test1Str);
+   //var test2 =  /^(`+|[^`])(?:[\\s\\S]*?(?:(?=[\\\\<!\\[`*~]|\\b_|https?:\\/\\/|ftp:\\/\\/|www\\.|$)|[^ ](?= {2,}\\n)|[^a-zA-Z0-9.!#$%&'*+\\/=?_`{\\|}~-](?=[a-zA-Z0-9.!#$%&'*+\\/=?_`{\\|}~-]+@))|(?= {2,}\\n|[a-zA-Z0-9.!#$%&'*+\\/=?_`{\\|}~-]+@))/;
+    //result = test2.exec(test1Str);
+   var test3 = /^\${2}([^$]+(?=\${2}))\${2}/;
+    result = test3.exec(test2Str);
     console.log(result);
 </script>
 </body>
