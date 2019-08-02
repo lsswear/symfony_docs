@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Symfony</title>
+    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="bower_components/mini.css/dist/mini-nord.min.css">
+    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+    <!--<script src="https://cdn.bootcss.com/marked/0.7.0/marked.min.js"></script>-->
+    <script src="js/marked.js"></script>
+    <script src="js/mermaid.js"></script>
+    <!--<script src="https://cdn.bootcss.com/mermaid/8.2.3/mermaid.min.js"></script>-->
+    <script src="https://cdn.bootcss.com/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTM"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css" integrity="sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j" crossorigin="anonymous">
+
+    <!-- The loading of KaTeX is deferred to speed up page rendering -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.js" integrity="sha384-9Nhn55MVVN0/4OFx7EE5kpFBPsEMZxKTCnA+4fqDmg12eCTqGi6+BB2LjY8brQxJ" crossorigin="anonymous"></script>
+
+    <!-- To automatically render math in text elements, include the auto-render extension: -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="document.getElementById('katex');"></script>
+    <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+    <!--<script src="https://cdn.bootcss.com/showdown/1.9.0/showdown.min.js"></script>-->
+    <script src="https://cdn.bootcss.com/jStorage/0.4.12/jstorage.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <header>
+                <a href="javascript:void(0);" class="logo" onclick="showDoc('index')">Symfony文档</a>
+                <a href="javascript:void(0);" class="button" onclick="showContent('index')">其他</a>
+                <!--<button>Download</button>-->
+                <label for="nav_checkbox" class="button drawer-toggle col-sm"></label>
+            </header>
+        </div>
+        <div class="row">
+            <input id="nav_checkbox" class="drawer" type="checkbox">
+            <nav class="col-md-4 col-lg-2" id="nav-drawer">
+                <label for="nav_checkbox" class="drawer-close"></label>
+                <span>基础</span>
+                <a href="javascript:void(0);" onclick="showDoc('install')">安装</a>
+                <a href="javascript:void(0);">路由</a>
+                <a href="javascript:void(0);">控制器</a>
+                <span>数据库</span>
+                <a href="javascript:void(0);">控制器</a>
+                <span>进阶</span>
+                <a href="javascript:void(0);">控制器</a>
+                <span>注解</span>
+                <a href="javascript:void(0);">命令行</a>
+            </nav>
+            <main class="col-sm-12 col-lg-10 col-md-8 ">
+                <div>
+                    <label for="">版本号：</label>
+                    <select name="" id="selectVersion">
+                        <option value="3.4" selected>3.4</option>
+                        <option value="4.1">4.1</option>
+                        <option value="4.2">4.2</option>
+                    </select>
+                </div>
+                <div id="content_div"></div>
+            </main>
+        </div>
+    </div>
+    <script>
+        $(function(){
+            mermaid.initialize({startOnLoad: true,theme: 'neutral'});
+            showDoc("index");
+            $('#selectVersion').change(function(){
+                var value = $(this).children('option:selected').val();
+                $.jStorage.set("version",value);
+            });
+        });
+        function showContent(name){
+            var file = "content/"+name+".md";
+            $.ajax({
+                url:file,
+                success:function(response){
+                    $("#content_div").html(marked(response));
+                },
+                error:function(response){
+                    console.log(response.responseText);
+                    $("#content_div").html(response.responseText);
+                }
+            });
+        }
+        function showDoc(name){
+            var version = $.jStorage.get("version");
+            var file = "docs/"+version+"/"+name+".md";
+            $.ajax({
+                url:file,
+                success:function(response){
+                    $("#content_div").html(marked(response));
+                },
+                error:function(response){
+                    console.log(response.responseText);
+                    $("#content_div").html(response.responseText);
+                }
+            });
+        }
+
+    </script>
+</body>
+</html>

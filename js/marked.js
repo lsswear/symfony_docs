@@ -1100,7 +1100,8 @@
         if (title) {
             out += ' title="' + title + '"';
         }
-        out += '>' + text + '</a>';
+        out += ' target="_blank"';
+        out += ' >' + text + '</a>';
         return out;
     };
 

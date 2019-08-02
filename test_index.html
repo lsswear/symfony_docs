@@ -42,20 +42,33 @@
 				console.log(data)
 			}
 		});*/
-		mermaid.initialize({startOnLoad: true,theme: 'neutral'});
-		hljs.initHighlightingOnLoad();
+
 		$(function(){
+			//mermaid.initialize({startOnLoad: true,theme: 'neutral'});
+			//hljs.initHighlightingOnLoad();
 			/*katex.render(String.raw`c = \pm\sqrt{a^2 + b^2}`,document.getElementById('test'), {
 				throwOnError: false
 			});*/
 			/*renderMathInElement(katex'), {
 			});*/
-			$.get("content/test1.md", function(response, status, xhr){
+			/*$.get("content/test1.md", function(response, status, xhr){
 				///var converter = new showdown.Converter();
 				//var html = converter.makeHtml(response);
+				console.log(status);
 				$("#content").html(marked(response));
 				//$("#content").html(html);
-			});
+			});*/
+			$.ajax({
+				url:"content/test1.md",
+				success:function(response){
+					mermaid.initialize({startOnLoad: true,theme: 'neutral'});
+					$("#content").html(marked(response));
+				},
+				error:function(response){
+					console.log(response.responseText);
+					$("#content").html(response.responseText);
+				}
+			})
 		});
 
 		/*$.get("content/11.txt", function(response, status, xhr){
