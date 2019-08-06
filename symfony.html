@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>Symfony</title>
-    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
     <link rel="stylesheet" href="bower_components/mini.css/dist/mini-nord.min.css">
     <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
     <!--<script src="https://cdn.bootcss.com/marked/0.7.0/marked.min.js"></script>-->
     <script src="js/marked.js"></script>
+    <script src="https://cdn.bootcss.com/jStorage/0.4.12/jstorage.min.js"></script>
     <script src="js/mermaid.js"></script>
     <!--<script src="https://cdn.bootcss.com/mermaid/8.2.3/mermaid.min.js"></script>-->
-    <script src="https://cdn.bootcss.com/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTM"></script>
+   <script src="https://cdn.bootcss.com/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTM"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css" integrity="sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j" crossorigin="anonymous">
 
     <!-- The loading of KaTeX is deferred to speed up page rendering -->
@@ -21,14 +21,13 @@
             onload="document.getElementById('katex');"></script>
     <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
     <!--<script src="https://cdn.bootcss.com/showdown/1.9.0/showdown.min.js"></script>-->
-    <script src="https://cdn.bootcss.com/jStorage/0.4.12/jstorage.min.js"></script>
 </head>
 <body>
     <div class="container">
         <div class="row">
             <header>
                 <a href="javascript:void(0);" class="logo" onclick="showDoc('index')">Symfony文档</a>
-                <a href="javascript:void(0);" class="button" onclick="showContent('index')">其他</a>
+                <a href="javascript:void(0);" class="button" onclick="showContent('test1')">其他</a>
                 <!--<button>Download</button>-->
                 <label for="nav_checkbox" class="button drawer-toggle col-sm"></label>
             </header>
@@ -74,11 +73,12 @@
             var file = "content/"+name+".md";
             $.ajax({
                 url:file,
+                async:false,
                 success:function(response){
                     $("#content_div").html(marked(response));
+                    mermaid.contentLoaded();
                 },
                 error:function(response){
-                    console.log(response.responseText);
                     $("#content_div").html(response.responseText);
                 }
             });
@@ -88,11 +88,12 @@
             var file = "docs/"+version+"/"+name+".md";
             $.ajax({
                 url:file,
+                async:false,
                 success:function(response){
                     $("#content_div").html(marked(response));
+                    mermaid.contentLoaded();
                 },
                 error:function(response){
-                    console.log(response.responseText);
                     $("#content_div").html(response.responseText);
                 }
             });
