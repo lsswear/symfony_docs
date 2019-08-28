@@ -1,0 +1,9 @@
+## 请求异常处理
+
+控制器继承的Controller类设置createNotFoundException函数调用NotFoundHttpException抛出404异常。
+
+NotFoundHttpException继承HttpException类。HttpException实现HttpExceptionInterface规范接口定义必要函数，继承RuntimeException而RuntimeException仅仅是继承了Exception。
+
+也就是说HttpException仅用接口定义了规范和继承了Exception，接口定义的函数包括getStatusCode获取状态编码、getHeaders获取请求头部。
+
+## 自定义异常

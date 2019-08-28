@@ -1,6 +1,7 @@
 ## 加载
 Symfony的服务在控制器中懒加载，即调用时为对应的服务进行实例化。
 
+
 ## services设置
 
 *app/config/services.yml*
@@ -59,6 +60,8 @@ services:
             - 'contact@example.com'
 ```
 
+_defaults中的设置对文件中定义的所有服务都有用，autowire: true根据服务中的构造函数定义的依赖注入自动传入正确的参数。其根据自动配置定义
+
 resource为资源内容，exclude为排除项。
 
 服务的id为配置项中的键值。
@@ -75,6 +78,44 @@ exclude会提高开发性能，但修改其中对应文件内容不影响容器�
 
 可以为服务配置常量，相同的类需设置不同的id。为确保服务的正确调用，尽量确保服务id唯一。
 
+bind可为依赖注入的接口选定特殊的实现类，也可为构造函数设置值。
+
+arguments为控制器构造中不能自动传值的类设置参数，比如：
+
+*app/config/services.yml*
+
+```php
+services:
+    # same as before
+    AppBundle\:
+        resource: '../../src/AppBundle/*'
+        exclude: '../../src/AppBundle/{Entity,Repository}'
+
+    # explicitly configure the service
+    AppBundle\Updates\SiteUpdateManager:
+        arguments:
+            $adminEmail: 'manager@example.com'
+```
+
+*src/AppBundle/Updates/SiteUpdateManager.php*
+
+```php
+class SiteUpdateManager
+{
+    private $adminEmail;
+
+    public function __construct(MessageGenerator $messageGenerator, \Swift_Mailer $mailer, $adminEmail)
+    {
+        $this->adminEmail = $adminEmail;
+    }
+
+    public function notifyOfSiteUpdate()
+    {
+        $message = \Swift_Message::newInstance()
+            ->setTo($this->adminEmail)
+    }
+}
+```
 *app/config/services.php*
 
 ```php
@@ -174,11 +215,12 @@ public function numberAction($max, LoggerInterface $logger)
 }
 ```
 
-服务id：
+使用服务id，并用其获取参数：
 
 ```php
 $logger = $container->get('logger');
 $entityManager = $container->get('doctrine.orm.entity_manager');
+$someParameter = $this->getParameter('kernel.debug');
 ```
 
 每个服务的id是其限定的类名。
@@ -191,6 +233,129 @@ Symgony3.0中服务id不区分大小写，但不建议这样书写，4.0版本�
 php bin/console debug:autowiring
 ```
 
+## 服务参数
+
+*app/config/services.yml*
+
+```
+parameters:
+    admin_email: manager@example.com
+services:
+    AppBundle\Updates\SiteUpdateManager:
+        arguments:
+            $adminEmail: '%admin_email%'
+```
+
+parameters 中设置参数名和参数值，使用是可以用参数名加%号，如%admin_email%，可以在其他配置文件中这样使用。
+
+也可以定义在parameters.yml文件中。
+
+*从依赖注入中获取*
+
+```php
+    class SiteUpdateManager
+    {
+        private $adminEmail;
+        public function __construct($adminEmail)
+        {
+            $this->adminEmail = $adminEmail;
+        }
+    }
+```
+
+*从服务中获取参数*
+
+```php
+public function newAction()
+{
+    // this ONLY works if you extend Controller
+    $adminEmail = $this->container->getParameter('admin_email');
+
+    // or a shorter way!
+    $adminEmail = $this->getParameter('admin_email');
+}
+```
+
+## 选择特定类型
+
+依赖注入的类为接口，被某个类实现，可选择其中的某个实现类作为绑定。
+
+*app/config/services.yml*
+
+```php
+services:
+    # explicitly configure the service
+    AppBundle\Service\MessageGenerator:
+        arguments:
+            $logger: '@monolog.logger.request'
+```
+
+*app/config/services.php*
+
+```php
+use AppBundle\Service\MessageGenerator;
+use Symfony\Component\DependencyInjection\Reference;
+
+$container->autowire(MessageGenerator::class)
+    ->setAutoconfigured(true)
+    ->setPublic(false)
+    ->setArgument('$logger', new Reference('monolog.logger.request'));
+```
+
+*src/AppBundle/Service/MessageGenerator.php*
+
+```php
+use Psr\Log\LoggerInterface;
+
+class MessageGenerator
+{
+    private $logger;
+
+    public function __construct(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
+    // ...
+}
+```
+
+可以通过名字和类型绑定。
+
+*config/services.yaml*
+
+```php
+services:
+    _defaults:
+        bind:
+            # pass this value to any $adminEmail argument for any service
+            # that's defined in this file (including controller arguments)
+            $adminEmail: 'manager@example.com'
+
+            # pass this service to any $requestLogger argument for any
+            # service that's defined in this file
+            $requestLogger: '@monolog.logger.request'
+
+            # pass this service for any LoggerInterface type-hint for any
+            # service that's defined in this file
+            Psr\Log\LoggerInterface: '@monolog.logger.request'
+```
+
+*config/services.php*
+
+```php
+use App\Controller\LuckyController;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Reference;
+
+$container->register(LuckyController::class)
+    ->setPublic(true)
+    ->setBindings([
+        '$adminEmail' => 'manager@example.com',
+        '$requestLogger' => new Reference('monolog.logger.request'),
+        LoggerInterface::class => new Reference('monolog.logger.request'),
+    ])
+;
+```
 ## 服务类型
 
 AbstractController

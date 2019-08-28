@@ -204,3 +204,9 @@ class HelloController
     }
 }
 ```
+
+## 请求异常处理
+
+HttpException类提供异常处理方法，抛出基本异常使用 throw new \Exception('Something went wrong!');
+
+## 定制异常报错
