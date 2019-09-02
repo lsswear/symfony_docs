@@ -1091,7 +1091,7 @@
         return '<del>' + text + '</del>';
     };
 
-    Renderer.prototype.link = function(href, title, text) {
+    Renderer.prototype.link = function(href, title, text,target) {
         href = cleanUrl(this.options.sanitize, this.options.baseUrl, href);
         if (href === null) {
             return text;
@@ -1100,7 +1100,7 @@
         if (title) {
             out += ' title="' + title + '"';
         }
-        out += ' target="_blank"';
+        //out += ' target="_blank"';
         out += ' >' + text + '</a>';
         return out;
     };
