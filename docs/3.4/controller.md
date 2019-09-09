@@ -27,7 +27,32 @@ class AppKernel extends Kernel
 
 Symfony4.2中Controller被废用，仅保留AbstractController。AbstractController在3.3版本中引入。
 
+命令行创建
+
+### 控制器创建
+
+php bin/console make:controller BrandNewController
+
+创建：
+
+* src/Controller/BrandNewController.php
+* templates/brandnew/index.html.twig
+    
+php bin/console make:crud Product
+
+创建：
+
+* src/Controller/ProductController.php
+* src/Form/ProductType.php
+* templates/product/_delete_form.html.twig
+* templates/product/_form.html.twig
+* templates/product/edit.html.twig
+* templates/product/index.html.twig
+* templates/product/new.html.twig
+* templates/product/show.html.twig
+
 ## 响应类型
+
 资源
 
 ```php
@@ -43,15 +68,28 @@ class LuckyController
      */
     public function numberAction()
     {
+        $response = new Response('Hello '.$name, Response::HTTP_OK);
+        // creates a CSS-response with a 200 status code
+        $response = new Response('<style> ... </style>');
+        $response->headers->set('Content-Type', 'text/css');
+       
         $number = random_int(0, 100);
-
-        return new Response(
-            '<html><body>Lucky number: '.$number.'</body></html>'
-        );
+        $response2 = new Response( '<html><body>Lucky number: '.$number.'</body></html>');
+        
+        return $response;
+        //return $response2;
     }
 }
 ```
+
+路径
+
+```
+$url = $this->generateUrl('app_lucky_number', ['max' => 10]);
+```
+
 页面
+
 ```php
 class LuckyController extends Controller
 {
@@ -136,7 +174,9 @@ Symfony中控制器不必通过注册变成服务，使用默认服务即配置�
      // ...
  }
 ```
+
 使用Controller中__invoke()方法
+
 ```php
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -207,6 +247,79 @@ class HelloController
 
 ## 请求异常处理
 
+使用createNotFoundException()方法跳转404界面。
+
+```
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+public function index()
+{
+    // retrieve the object from database
+    $product = ...;
+    if (!$product) {
+        throw $this->createNotFoundException('The product does not exist');
+    }
+    return $this->render(...);
+}
+```
+
 HttpException类提供异常处理方法，抛出基本异常使用 throw new \Exception('Something went wrong!');
 
-## 定制异常报错
+## Request对象使用
+
+将Request对象作为控制器方法参数使用。
+
+```
+use Symfony\Component\HttpFoundation\Request;
+public function index(Request $request, $firstName, $lastName)
+{
+    $page = $request->query->get('page', 1);
+    $request->isXmlHttpRequest(); // is it an Ajax request?
+    $request->getPreferredLanguage(['en', 'fr']);
+    $request->query->get('page');
+    $request->request->get('page');
+    $request->server->get('HTTP_HOST');
+    $request->files->get('foo');
+    $request->cookies->get('PHPSESSID');
+    $request->headers->get('host');
+    $request->headers->get('content-type');
+}
+```
+
+## 返回JSON对象
+
+使用json()帮助方法，返回自动编码的JsonResponse对象。
+
+```
+public function index()
+{
+    return $this->json(['username' => 'jane.doe']);
+}
+```
+
+如果您的应用程序中启用了序列化器服务，它将用于将数据序列化为JSON。否则，将使用json_encode函数。
+
+## 流媒体文件响应
+
+可以使用file()帮助器从控制器内部提供文件，并使用参数控制行为。
+
+```
+use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+
+public function download()
+{
+    // load the file from the filesystem
+    $file = new File('/path/to/some_file.pdf');
+
+    return $this->file($file);
+
+    // rename the downloaded file
+    return $this->file($file, 'custom_name.pdf');
+
+    // 显示内容，非下载
+    return $this->file('invoice_3241.pdf', 'my_invoice.pdf', ResponseHeaderBag::DISPOSITION_INLINE);
+}
+```
+
+## 总结
+
