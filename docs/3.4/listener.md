@@ -40,6 +40,64 @@ fos_rest:
 
 数组规格化器允许在数据解码后对其进行转换，以便于对其进行处理。
 
+例如，API客户端能够发送带有下划线键的请求，将其转化成驼峰大小键，需要用camel_keys数组规范化器：
+
+*app/config/config.yml*
+
+```
+fos_rest:
+    body_listener:
+        array_normalizer: fos_rest.normalizer.camel_keys
+```
+
+数组包含键时，规范化后覆盖现有的键。
+例如，foo_bar和foo_bar都指向fooBar，若标准化规范化器接收数据会抛出BadRequestHttpException异常，信息包括：The key "foo_Bar" is invalid as it
+will override the existing key "fooBar"。
+
+当使用camel_keys规范化器，必须注意表单名城。
+
+fos_rest.normalizer.camel_keys对应控制器FOS\RestBundle\Normalizer\ArrayNormalizerInterface。
+
+*app/config/config.yml*
+
+```
+fos_rest:
+    body_listener:
+        array_normalizer: acme.normalizer.custom
+```
+
+默认情况下，数组规范化器仅应用于可解码格式的请求。如果希望对表单数据进行规范化，可以使用forms标志:
+
+*app/config/config.yml*
+
+```
+fos_rest:
+    body_listener:
+        array_normalizer:
+            service: fos_rest.normalizer.camel_keys
+            forms: true
+```
+
+### Request Body Converter Listener
+
+ParamConverters构成对象并将其注入控制器中，作为方法参数。请求体转换器使将请求体反序列化为对象成为可能
+
+转换器要求安装SensioFrameworkExtraBundle并且converters启用：
+
+*app/config/config.yml*
+
+```
+sensio_framework_extra:
+    request: { converters: true }
+```
+
+要启用请求体转换器，需添加以下配置:
+
+```
+fos_rest:
+    body_converter:
+        enabled: true
+```
 
 
 ## 优先级
