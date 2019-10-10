@@ -74,10 +74,12 @@
         $(function(){
             mermaid.initialize({startOnLoad: true,theme: 'neutral'});
             var defaultVersion =  $('#selectVersion option:selected').val();
+            console.log(defaultVersion);
             $.jStorage.set("version",defaultVersion);
             showDoc("index");
             $('#selectVersion').change(function(){
                 var value = $(this).children('option:selected').val();
+                console.log(value);
                 $.jStorage.set("version",value);
             });
         });
