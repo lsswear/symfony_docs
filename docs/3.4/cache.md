@@ -312,3 +312,65 @@ $client = MemcachedAdapter::createConnection(
 
 
 
+
+有些是配置可通过快捷方式视配置。使用这些快捷方式可用cache.[type]格式的服务id创建pools。
+
+*app/config/config.yml*
+
+```
+framework:
+    cache:
+        directory: '%kernel.cache_dir%/pools' # Only used with cache.adapter.filesystem
+
+        # service: cache.doctrine
+        default_doctrine_provider: 'app.doctrine_cache'
+        # service: cache.psr6
+        default_psr6_provider: 'app.my_psr6_service'
+        # service: cache.redis
+        default_redis_provider: 'redis://localhost'
+        # service: cache.memcached
+        default_memcached_provider: 'memcached://localhost'
+        # service: cache.pdo
+        default_pdo_provider: 'doctrine.dbal.default_connection'
+```
+
+*app/config/config.php*
+
+```
+ $container->loadFromExtension('framework', [
+     'cache' => [
+         // Only used with cache.adapter.filesystem
+         'directory' => '%kernel.cache_dir%/pools',
+         // Service: cache.doctrine
+         'default_doctrine_provider' => 'app.doctrine_cache',
+         // Service: cache.psr6
+         'default_psr6_provider' => 'app.my_psr6_service',
+         // Service: cache.redis
+         'default_redis_provider' => 'redis://localhost',
+         // Service: cache.memcached
+         'default_memcached_provider' => 'memcached://localhost',
+         // Service: cache.pdo
+         'default_pdo_provider' => 'doctrine.dbal.default_connection',
+     ],
+ ]);
+```
+
+## 创建自动以pools
+
+根据适配器创建服务的pools:
+
+*app/config/config.yml*
+
+```
+framework:
+    cache:
+        default_memcached_provider: 'memcached://localhost'
+        pools:
+            my_cache_pool:
+                adapter: cache.adapter.filesystem
+            cache.acme:
+                adapter: cache.adapter.memcached
+            cache.foobar:
+                adapter: cache.adapter.memcached
+                provider: 'memcached://user:password@example.com'
+```
