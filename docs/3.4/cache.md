@@ -355,7 +355,7 @@ framework:
  ]);
 ```
 
-## 创建自动以pools
+## 创建自定义pools
 
 根据适配器创建服务的pools:
 
@@ -374,3 +374,145 @@ framework:
                 adapter: cache.adapter.memcached
                 provider: 'memcached://user:password@example.com'
 ```
+
+创建三个服务：my_cache_pool、cache.acme 和 cache.foobar。my_cache_pool使用ArrayAdapter，其他两个使用MemcachedAdapter。cache.acme使用localhost的Memcached，cache.foobar使用example.com的Memcached。
+
+使用pools中的服务作为适配器使用。
+
+*app/config/config.yml*
+
+```
+framework:
+    cache:
+        app: my_configured_app_cache
+        pools:
+            my_cache_pool:
+                adapter: cache.adapter.memcached
+                provider: 'memcached://user:password@example.com'
+            cache.short_cache:
+                adapter: my_cache_pool
+                default_lifetime: 60
+            cache.long_cache:
+                adapter: my_cache_pool
+                default_lifetime: 604800
+            my_configured_app_cache:
+                # "cache.adapter.filesystem" is the default for "cache.app"
+                adapter: cache.adapter.filesystem
+                default_lifetime: 3600
+```
+
+*app/config/config.php*
+
+```
+$container->loadFromExtension('framework', [
+    'cache' => [
+        'app' => 'my_configured_app_cache',
+        'pools' => [
+            'my_cache_pool' => [
+                'adapter' => 'cache.adapter.memcached',
+                'provider' => 'memcached://user:password@example.com',
+            ],
+            'cache.short_cache' => [
+                'adapter' => 'cache.adapter.memcached',
+                'default_lifetime' => 60,
+            ],
+            'cache.long_cache' => [
+                'adapter' => 'cache.adapter.memcached',
+                'default_lifetime' => 604800,
+            ],
+            'my_configured_app_cache' => [
+                // "cache.adapter.filesystem" is the default for "cache.app"
+                'adapter' => 'cache.adapter.filesystem',
+                'default_lifetime' => 3600,
+            ],
+        ],
+    ],
+]);
+```
+
+## 自定义提供者参数
+
+有些提供者有特殊配置参数。 RedisAdapter允许提供者配置参数timeout、retry_interval。使用RedisAdapter非默认值需要自定义\Redis提供者并在pools设置配置的时候使用它。
+
+*app/config/config.yml*
+
+```
+framework:
+    cache:
+        pools:
+            cache.my_redis:
+                adapter: cache.adapter.redis
+                provider: app.my_custom_redis_provider
+
+services:
+    app.my_custom_redis_provider:
+        class: \Redis
+        factory: ['Symfony\Component\Cache\Adapter\RedisAdapter', 'createConnection']
+        arguments:
+            - 'redis://localhost'
+            - { retry_interval: 2, timeout: 10 }
+```
+
+*app/config/config.php*
+
+```
+$container->loadFromExtension('framework', [
+    'cache' => [
+        'pools' => [
+            'my_cache_pool' => [
+                'adapter' => 'cache.adapter.psr6',
+                'provider' => 'app.my_cache_chain_adapter',
+            ],
+            'cache.my_redis' => [
+                'adapter' => 'cache.adapter.redis',
+                'provider' => 'redis://user:password@example.com',
+            ],
+            'cache.apcu' => [
+                'adapter' => 'cache.adapter.apcu',
+            ],
+            'cache.array' => [
+                'adapter' => 'cache.adapter.filesystem',
+            ],
+        ],
+    ],
+]);
+
+$container->getDefinition('app.my_cache_chain_adapter', \Symfony\Component\Cache\Adapter\ChainAdapter::class)
+    ->addArgument([
+        new Reference('cache.array'),
+        new Reference('cache.apcu'),
+        new Reference('cache.my_redis'),
+    ])
+    ->addArgument(31536000);
+```
+
+pools中cache.my_redis使用cache.adapter.redis适配器和app.my_custom_redis_provider服务最为提供者。因为ChainAdapter不支持cache.pool标签，所以用ProxyAdapter来装饰。
+
+## 清除缓存
+
+清除缓存可以用bin/console cache:pool:clear [pool] 命令。
+
+会移除所有存储条目，并会重新设置所有值。
+
+还可以将pools分组到 "cache clearers"(缓存清除器)中。
+
+定义三个缓存清除器：
+
++ cache.global_clearer
++ cache.system_clearer
++ cache.app_clearer
+
+global_clearer清除每个pools中的所有缓存。
+
+system_clearer在bin/console cache:clear命令中使用。
+
+app_clearer为默认清除器。
+
+清除一个pools：php bin/console cache:pool:clear my_cache_pool
+
+清除所有pools：php bin/console cache:pool:clear cache.app_clearer
+
+清除所有缓存：php bin/console cache:pool:clear cache.global_clearer
+
+
+
