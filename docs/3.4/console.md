@@ -307,9 +307,7 @@ class CreateUserCommand extends Command
  
 若使用services.yml配置文件，你的命令已定义为服务，此为推荐设置。
  
-Symfony也会查找每个bundle中的Command文件为了未注册为服务和未自动注册的command类。
-
-这种自动注册的方法在3.4版本中建议使用。4.0版本中命令不可被任何方式自动注册。
+Symfony也会查找每个bundle中的Command文件为了未注册为服务和未自动注册的command类。这种自动注册的方法在3.4版本中建议使用。4.0版本中命令不可被任何方式自动注册。
 
 若继承ContainerAwareCommand类可实现公共服务功能通过$this->getContainer()->get('SERVICE_ID')。
 
@@ -391,7 +389,164 @@ $container
 
 list命令会列出所有命令，包括懒加载命令。
 
+## 执行命令
 
+配置和注册命令之后可执行命令：
+
+```
+php bin/console app:create-user
+```
+
+编写execute访问输入流和输出流：
+
+```
+protected function execute(InputInterface $input, OutputInterface $output)
+{
+    // 输出多行到控制台，每行加换行
+    $output->writeln([
+        'User Creator',
+        '============',
+        '',
+    ]);
+    // outputs a message followed by a "\n"
+    $output->writeln('Whoa!');
+    // 每行不输出换行
+    $output->write('You are about to ');
+    $output->write('create a user.');
+}
+```
+执行效果：
+
+```
+> php bin/console app:create-user
+User Creator
+============
+
+Whoa!
+You are about to create a user.
+```
+
+## 控制台输入
+
+通过选项或数组向命令输入信息：
+
+```
+use Symfony\Component\Console\Input\InputArgument;
+
+// ...
+protected function configure()
+{
+    $this
+        // configure an argument
+        ->addArgument('username', InputArgument::REQUIRED, 'The username of the user.');
+}
+public function execute(InputInterface $input, OutputInterface $output)
+{
+    $output->writeln([
+        'User Creator',
+        '============',
+        '',
+    ]);
+    // retrieve the argument value using getArgument()
+    $output->writeln('Username: '.$input->getArgument('username'));
+}
+```
+
+执行效果：
+
+```
+> php bin/console app:create-user Wouter
+User Creator
+============
+
+Username: Wouter
+```
+
+## 从服务容器中获取服务
+
+只要命令注册为服务，就可以通过依赖注射访问服务：
+
+```
+use AppBundle\Service\UserManager;
+use Symfony\Component\Console\Command\Command;
+
+class CreateUserCommand extends Command
+{
+    private $userManager;
+
+    public function __construct(UserManager $userManager)
+    {
+        $this->userManager = $userManager;
+        parent::__construct();
+    }
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        $this->userManager->create($input->getArgument('username'));
+        $output->writeln('User successfully generated!');
+    }
+}
+```
+
+## 命令声明周期
+
+命令运行时有三个生命周期方法：
+
++ initialize() 可选
+    执行在interact()和execute()之前，初始化其余命令中使用的变量。
++ interact() 可选
+    执行在interact()之后，execute()之前，检查选项或参数是否有缺失，交互请求式询用户这些值。
+    这是最后询问缺失选项或参数第地方。命令执行之后，缺少选项或参数会导致失败。
++ execute() 必填
+    执行在interact()和initialize()之后 ，包含命令执行逻辑。
+     
+## 命令测试
+
+symfony提供几个工具帮助测试命令。最有用的是CommandTester类。
+
+它使用特殊的输入和输出简化测试，并不需要真正的控制台：
+
+*tests/AppBundle/Command/CreateUserCommandTest.php*
+
+```
+namespace Tests\AppBundle\Command;
+
+use AppBundle\Command\CreateUserCommand;
+use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Console\Tester\CommandTester;
+
+class CreateUserCommandTest extends KernelTestCase
+{
+    public function testExecute()
+    {
+        $kernel = static::createKernel();
+        $application = new Application($kernel);
+        $command = $application->find('app:create-user');
+        $commandTester = new CommandTester($command);
+        $commandTester->execute([
+            'command'  => $command->getName(),
+            // pass arguments to the helper
+            'username' => 'Wouter',
+            // prefix the key with two dashes when passing options,
+            //执行效果： '--some-option' => 'option_value',
+        ]);
+        // the output of the command in the console
+        $output = $commandTester->getDisplay();
+        $this->assertContains('Username: Wouter', $output);
+    }
+}
+```
+
+还可以使用ApplicationTester测试整个控制台应用程序。
+
+独立项目使用控制台组件，使用Symfony\Component\Console\Application并且继承\PHPUnit\Framework\TestCase。
+
+## 命令行错误日志
+
+命令运行时任何错误输出，symfony为它添加一条日志包括整个失败的命令。
+
+Symfony注册一个事件订阅者来监听ConsoleEvents::TERMINATE事件，并在命令没有以0退出状态结束时添加一个日志消息。
+ 
 
 
 
