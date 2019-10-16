@@ -311,8 +311,86 @@ Symfony也会查找每个bundle中的Command文件为了未注册为服务和未
 
 这种自动注册的方法在3.4版本中建议使用。4.0版本中命令不可被任何方式自动注册。
 
+若继承ContainerAwareCommand类可实现公共服务功能通过$this->getContainer()->get('SERVICE_ID')。
 
- https://symfony.com/doc/3.4/console/commands_as_services.html
+注册为服务，通过依赖注射访问服务。
+
+```
+namespace AppBundle\Command;
+
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+
+class SunshineCommand extends Command
+{
+    protected static $defaultName = 'app:sunshine';
+    private $logger;
+
+    public function __construct(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+
+        // you *must* call the parent constructor
+        parent::__construct();
+    }
+
+    protected function configure()
+    {
+        $this
+            ->setDescription('Good morning!');
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        $this->logger->info('Waking up the sun');
+        // ...
+    }
+}
+```
+
+没必要通过configure()访问服务。若命令非懒加载，避免做任何工作，如数据库访问，会在在加载时运行，即使是在控制台使用不同命令。
+
+### 懒加载
+
+3.4版本引入支持懒加载。
+
+设置静态变量$defaultName：
+
+```
+class SunshineCommand extends Command
+{
+    protected static $defaultName = 'app:sunshine';
+}
+```
+
+或者在配置文件中定义：
+
+*app/config/services.yml*
+
+```
+services:
+    AppBundle\Command\SunshineCommand:
+        tags:
+            - { name: 'console.command', command: 'app:sunshine' }
+```
+
+*app/config/services.php*
+
+```
+use AppBundle\Command\SunshineCommand;
+$container
+    ->register(SunshineCommand::class)
+    ->addTag('console.command', ['command' => 'app:sunshine']);
+```
+
+若使用getAliases()方法设置别名，则必须为每个别名添加一个console.command标记。
+
+根据以上代码，SunshineCommand只有运行app:sunshine命令才会实例化。
+
+list命令会列出所有命令，包括懒加载命令。
+
 
 
 
