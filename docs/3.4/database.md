@@ -237,3 +237,191 @@ public function editAction()
 }
 ```
 
+过程：
++ $this->getDoctrine()->getManager()方法获取Doctrine的实体管理器对象。
++ $product = new Product();获取实体对象，并设置数据
++ $entityManager->persist($product);向实体管理对象设置管理的实体类
++ $entityManager->flush();执行语句，不存在的单数据执行INSERT
+
+flush()失败会抛出Doctrine\ORM\ORMException异常。
+
+## 获取数据
+
+通过id获取数据：
+
+```
+public function showAction($productId)
+{
+    $product = $this->getDoctrine()
+        ->getRepository(Product::class)
+        ->find($productId);
+
+    if (!$product) {
+        throw $this->createNotFoundException(
+            'No product found for id '.$productId
+        );
+    }
+}
+```
+
+可以使用快捷方式@ParamConverter，根据[FrameworkExtraBundle](https://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/annotations/converters.html)文档。
+
+获取资源对象：$repository = $this->getDoctrine()->getRepository(Product::class);
+
+也可以使用AppBundle:Product语法。可以在任何Doctrine对象中使用，而不是实体类中，如AppBundle\Entity\Product。只要实体类在命名空间在对应的bundle中就可以使用。
+
+Doctrine帮助方法：
+
+```
+$repository = $this->getDoctrine()->getRepository(Product::class);
+
+// 通过id找单行数据
+$product = $repository->find($productId);
+
+// 根据列值查找单个产品的动态方法名称
+$product = $repository->findOneById($productId);
+$product = $repository->findOneByName('Keyboard');
+
+// 根据列值查找一组产品的动态方法名称
+$products = $repository->findByPrice(19.99);
+
+// 查找所有数据
+$products = $repository->findAll();
+```
+
+用findBy()和findOneBy()多条件查询：
+
+```
+$repository = $this->getDoctrine()->getRepository(Product::class);
+
+// looks for a single product matching the given name and price
+$product = $repository->findOneBy([
+    'name' => 'Keyboard',
+    'price' => 19.99
+]);
+
+// looks for multiple products matching the given name, ordered by price
+$products = $repository->findBy(
+    ['name' => 'Keyboard'],
+    ['price' => 'ASC']
+);
+```
+
+## 修改对象
+
+在控制器中先查询再修改数据：
+
+```
+use AppBundle\Entity\Product;
+
+public function updateAction($productId)
+{
+    $entityManager = $this->getDoctrine()->getManager();
+    $product = $entityManager->getRepository(Product::class)->find($productId);
+
+    if (!$product) {
+        throw $this->createNotFoundException(
+            'No product found for id '.$productId
+        );
+    }
+
+    $product->setName('New product name!');
+    $entityManager->flush();
+
+    return $this->redirectToRoute('homepage');
+}
+```
+
+修改步骤：
++ 用Doctrine查询数据
++ 修改对象属性
++ 使用实例管理器flush()，更新对象数据
+
+## 删除对象
+
+用实例管理器remove()方法删除数据：
+
+```
+$entityManager->remove($product);
+$entityManager->flush();
+```
+
+## 查询对象
+
+使用repository对象调用基本查询：
+
+```
+$repository = $this->getDoctrine()->getRepository(Product::class);
+
+$product = $repository->find($productId);
+$product = $repository->findOneByName('Keyboard');
+```
+
+Doctrine Query Language (DQL)可以使用复杂查询。DQL类似于SQL，但查询的是实体类的一个或多个对象例如Product，不是表中的行.
+
+## 使用DQL查询对象
+
+```
+$query = $entityManager->createQuery(
+    'SELECT p
+    FROM AppBundle:Product p
+    WHERE p.price > :price
+    ORDER BY p.price ASC'
+)->setParameter('price', 19.99);
+
+$product = $query->setMaxResults(1)->getOneOrNullResult();
+
+$products = $query->getResult();
+```
+
+从AppBundle实体中进行查询，命名别名为p。
+
+使用setParameter()设置查询参数，查询参数占位符设置，防止sql注入。
+
+$query->setMaxResults(1)->getOneOrNullResult()仅获取一行。 $query->getResult()获取多行。
+
+[Doctrine Query Language文档](https://www.doctrine-project.org/projects/doctrine-orm/en/latest/reference/dql-doctrine-query-language.html)
+
+## 使用Doctrine查询生成器查询对象
+
+可以用帮助方法QueryBuilder动态创建查询语句，比DQL更容易阅读。
+
+```
+$repository = $this->getDoctrine()->getRepository(Product::class);
+
+// $repository对象使用createQueryBuilder()方法自动从AppBundle:Product查询
+// 设置别名为p
+$query = $repository->createQueryBuilder('p')
+    ->where('p.price > :price')
+    ->setParameter('price', '19.99')
+    ->orderBy('p.price', 'ASC')
+    ->getQuery();
+// 多行查询
+$products = $query->getResult();
+// 单行查询
+$product = $query->setMaxResults(1)->getOneOrNullResult();
+```
+
+
+QueryBuilder对象包含构建查询所需的每个方法。通过调用getQuery()方法，查询生成器返回一个普通的查询对象，该对象可用于获取查询的结果。
+
+更多Doctrine Query Builder 文档查询 [Query Builder](https://www.doctrine-project.org/projects/doctrine-orm/en/latest/reference/query-builder.html)
+
+
+## 将自定义查询组织到存储库类中
+
+https://symfony.com/doc/3.4/doctrine/repository.html
+
+## 配置
+
+https://symfony.com/doc/3.4/reference/configuration/doctrine.html
+
+## 字段类型推荐
+
+https://www.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html#property-mapping
+
+## 关系和关联
+
+https://symfony.com/doc/3.4/doctrine/associations.html
+
+

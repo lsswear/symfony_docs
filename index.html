@@ -35,30 +35,8 @@
         <div class="row">
             <input id="nav_checkbox" class="drawer" type="checkbox">
             <nav class="col-md-4 col-lg-2" id="nav-drawer">
-                <label for="nav_checkbox" class="drawer-close"></label>
-                <span>基础</span>
-                <a href="javascript:void(0);" onclick="showDoc('install')">安装</a>
-                <a href="javascript:void(0);" onclick="showDoc('base')">基础</a>
-                <a href="javascript:void(0);" onclick="showDoc('route')">路由</a>
-                <a href="javascript:void(0);" onclick="showDoc('controller')">控制器</a>
-                <a href="javascript:void(0);" onclick="showDoc('exception')">异常处理</a>
-                <a href="javascript:void(0);" onclick="showDoc('service')">服务</a>
-                <a href="javascript:void(0);" onclick="showDoc('view')">视图</a>
-                <a href="javascript:void(0);" onclick="showDoc('bundle')">Bundle</a>
-                <a href="javascript:void(0);" onclick="showDoc('cache')">缓存</a>
-                <a href="javascript:void(0);" onclick="showDoc('console')">console</a>
-                <span>数据库</span>
-                <a href="javascript:void(0);">控制器</a>
-                <span>进阶</span>
-                <a href="javascript:void(0);" onclick="showDoc('config')">配置项</a>
-                <a href="javascript:void(0);">控制器</a>
-                <span>注解</span>
-                <a href="javascript:void(0);">命令行</a>
-                <span>服务</span>
-                <a href="javascript:void(0);" onclick="showDoc('form')">表单</a>
-                <a href="javascript:void(0);" onclick="showDoc('asset')">asset</a>
-                <span>组件</span>
-                <a href="javascript:void(0);" onclick="showDoc('consoleComponent')">console</a>
+
+
 
             </nav>
             <main class="col-sm-12 col-lg-10 col-md-8 ">
@@ -66,8 +44,8 @@
                     <label for="">版本号：</label>
                     <select name="" id="selectVersion">
                         <option value="3.4" selected>3.4</option>
-                        <option value="4.1">4.1</option>
-                        <option value="4.2">4.2</option>
+                        <option value="4.3">4.3</option>
+                        <option value="5.0">5.0</option>
                     </select>
                 </div>
                 <div id="content_div"></div>
@@ -78,13 +56,13 @@
         $(function(){
             mermaid.initialize({startOnLoad: true,theme: 'neutral'});
             var defaultVersion =  $('#selectVersion option:selected').val();
-            console.log(defaultVersion);
             $.jStorage.set("version",defaultVersion);
-            showDoc("index");
+            init();
             $('#selectVersion').change(function(){
                 var value = $(this).children('option:selected').val();
                 console.log(value);
                 $.jStorage.set("version",value);
+                init();
             });
         });
         function showContent(name){
@@ -116,7 +94,21 @@
                 }
             });
         }
-
+        function init(){
+            var version = $.jStorage.get("version");
+            var menuFile = "docs/"+version+"/menu.html";
+            $.ajax({
+                url:menuFile,
+                async:false,
+                success:function(response){
+                    $('#nav-drawer').html(response);
+                },
+                error:function(response){
+                    $("#nav-drawer").html(response.responseText);
+                }
+            });
+            showDoc("index");
+        }
     </script>
 </body>
 </html>
