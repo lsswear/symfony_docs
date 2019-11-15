@@ -174,6 +174,8 @@ AppBundle\Entity\Product:
             type: text
 ```
 
+备注详细内容：https://www.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html#property-mapping
+
 Bundle只能接受一种元数据定义格式。例如，不可能将YAML元数据定义与带注释的PHP实体类定义混合在一起。
 
 表名是可选的，如果省略，将根据实体类的名称自动确定。

@@ -152,3 +152,341 @@ class Product
 ```
 
 命令执行在数据库上所有未运行的迁移文件。
+
+在部署生产数据库以使其保持最新时，应该在生产环境中运行此命令。
+
+## 迁移或添加更多字段
+
+可以编辑实体类添加新字段，也可以使用make:entity:
+
+```
+> php bin/console make:entity
+
+Class name of the entity to create or update
+> Product
+
+ to stop adding fields):
+> description
+
+Field type (enter ? to see all types) [string]:
+> text
+
+Can this field be null in the database (nullable) (yes/no) [no]:
+> no
+
+ to stop adding fields):
+>
+(press enter again to finish)
+```
+
+添加description字段属性和getDescription()和setDescription()方法：
+
+*src/Entity/Product.php*
+
+```
+class Product
+{
+    // ...
+
++     /**
++      * @ORM\Column(type="text")
++      */
++     private $description;
+
+    // getDescription() & setDescription() were also added
+}
+```
+
+这是新加的字段并未创建到数据库中，需执行迁移命令：
+
+```
+> php bin/console make:migration
+```
+
+执行的sql为：
+
+```
+ALTER TABLE product ADD description LONGTEXT NOT NULL
+```
+
+或执行
+
+```
+> php bin/console doctrine:migrations:migrate
+```
+
+将执行一个新的迁移文件，因为DoctrineMigrationsBundle知道第一次迁移已经提前执行，它用migration_versions管理迁移过的文件。
+
+每次对模式进行更改时，运行这两个命令来生成迁移，然后执行迁移。请确保提交迁移文件并在部署时执行它们。
+
+若手动添加新属性，可执行make:entity命令生成get和set方法。
+
+```
+> php bin/console make:entity --regenerate
+```
+
+如果您做了一些更改，并且想要重新生成所有的getter/setter方法，那么还要传递 --overwrite。
+
+## 解析对象到数据库
+
+创建编辑对象的控制器：
+
+```
+> php bin/console make:controller ProductController
+```
+
+*src/Controller/ProductController.php*
+
+```
+namespace App\Controller;
+
+use App\Entity\Product;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\Response;
+
+class ProductController extends AbstractController
+{
+    /**
+     * @Route("/product", name="create_product")
+     */
+    public function createProduct(): Response
+    {
+        // you can fetch the EntityManager via $this->getDoctrine()
+        // or you can add an argument to the action: createProduct(EntityManagerInterface $entityManager)
+        $entityManager = $this->getDoctrine()->getManager();
+
+        $product = new Product();
+        $product->setName('Keyboard');
+        $product->setPrice(1999);
+        $product->setDescription('Ergonomic and stylish!');
+
+        // tell Doctrine you want to (eventually) save the Product (no queries yet)
+        $entityManager->persist($product);
+
+        // actually executes the queries (i.e. the INSERT query)
+        $entityManager->flush();
+
+        return new Response('Saved new product with id '.$product->getId());
+    }
+}
+```
+
+根据以上内容，访问"http://localhost:8000/product"可创建一行数据。
+
+在命令行中执行查询：
+
+```
+> php bin/console doctrine:query:sql 'SELECT * FROM product'
+```
+
+上述例子代码解析：
+
+$this->getDoctrine()->getManager()：获取Doctrine管理实例对象，这是Doctrine中最重要的对象。可用于保存、更新对象到数据库。
+
+product对象和其他对象一样使用。
+
+persist($product) 使用Doctrine管理product对象，不会导致数据库进行查询。
+
+flush()检查所有管理对象是否需要持久化到数据库。对象不在数据库中则管理实例执行INSERT。
+
+若flush()失败，会抛出Doctrine\ORM\ORMException异常，查看[事务和并发](https://www.doctrine-project.org/projects/doctrine-orm/en/latest/reference/transactions-and-concurrency.html)。
+
+## 校验对象
+
+[symfony验证器](https://symfony.com/doc/current/validation.html)重用Document元数据执行基本验证任务：
+
+*src/Controller/ProductController.php*
+
+```
+namespace App\Controller;
+
+use App\Entity\Product;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+// ...
+
+class ProductController extends AbstractController
+{
+    /**
+     * @Route("/product", name="create_product")
+     */
+    public function createProduct(ValidatorInterface $validator): Response
+    {
+        $product = new Product();
+        // This will trigger an error: the column isn't nullable in the database
+        $product->setName(null);
+        // This will trigger a type mismatch error: an integer is expected
+        $product->setPrice('1999');
+
+        // ...
+
+        $errors = $validator->validate($product);
+        if (count($errors) > 0) {
+            return new Response((string) $errors, 400);
+        }
+
+        // ...
+    }
+}
+```
+
+虽然Product实例未显示定义在[验证器配置](https://symfony.com/doc/current/validation.html)中,symfony会检查Doctrine映射配置推断一些验证规则。
+
+例如，数据库设置name字段属性不可为null，NotNull约束自动添加到属性，若它还没包含那个约束。
+
+根据Doctrine元数据和相应验证约束通过symfony自动添加：
+
+**nullable** 
+
+默认：false
+
+验证约束：[NotNull](https://symfony.com/doc/current/reference/constraints/NotNull.html)
+
+备注：需要引入[PropertyInfo component](https://symfony.com/doc/current/components/property_info.html)
+
+**type**
+
+验证约束：[type](https://symfony.com/doc/current/reference/constraints/Type.html)
+
+备注：需要引入[PropertyInfo component](https://symfony.com/doc/current/components/property_info.html)
+
+**unique**
+
+验证约束：[UniqueEntity](https://symfony.com/doc/current/reference/constraints/UniqueEntity.html)
+
+**length**
+
+验证约束：[Length](https://symfony.com/doc/current/reference/constraints/Length.html)
+
+因为[表单组件](https://symfony.com/doc/current/forms.html)和[API平台](https://api-platform.com/docs/core/validation/)内部使用验证组件， 所有表单和wepAPI都会自动收益于这些验证约束。
+
+4.3版本已加入自动验证。
+
+## 从数据库更新对象
+
+*src/Controller/ProductController.php*
+
+```
+/**
+ * @Route("/product/{id}", name="product_show")
+ */
+public function show($id)
+{
+    $product = $this->getDoctrine()
+        ->getRepository(Product::class)
+        ->find($id);
+
+    if (!$product) {
+        throw $this->createNotFoundException(
+            'No product found for id '.$id
+        );
+    }
+
+    return new Response('Check out this great product: '.$product->getName());
+
+    // or render a template
+    // in the template, print things with {{ product.name }}
+    // return $this->render('product/show.html.twig', ['product' => $product]);
+}
+```
+
+```
+$repository = $this->getDoctrine()->getRepository(Product::class);
+
+// look for a single Product by its primary key (usually "id")
+$product = $repository->find($id);
+
+// look for a single Product by name
+$product = $repository->findOneBy(['name' => 'Keyboard']);
+// or find by name and price
+$product = $repository->findOneBy([
+    'name' => 'Keyboard',
+    'price' => 1999,
+]);
+
+// look for multiple Product objects matching the name, ordered by price
+$products = $repository->findBy(
+    ['name' => 'Keyboard'],
+    ['price' => 'ASC']
+);
+
+// look for *all* Product objects
+$products = $repository->findAll();
+
+```
+
+可以使用自定义方法处理复杂查询，参照内容：Repository查询对象。
+ 
+## 自动获取对象，参数转换
+
+可以使用[SensioFrameworkExtraBundle](https://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/index.html)自动查询。
+
+引入 SensioFrameworkExtraBundle：
+
+```
+> composer require sensio/framework-extra-bundle
+```
+
+*src/Controller/ProductController.php*
+
+```
+use App\Entity\Product;
+
+/**
+ * @Route("/product/{id}", name="product_show")
+ */
+public function show(Product $product)
+{
+    // use the Product
+}
+```
+
+使用{id}查询Product,若，若没找到生成404页面。
+
+其他参数设置参照：[ParamConverter](https://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/annotations/converters.html)
+
+## 更新对象
+
+已存在获取对象的Doctrine实例，交互使用PHP模型：
+
+```
+/**
+ * @Route("/product/edit/{id}")
+ */
+public function update($id)
+{
+    $entityManager = $this->getDoctrine()->getManager();
+    $product = $entityManager->getRepository(Product::class)->find($id);
+
+    if (!$product) {
+        throw $this->createNotFoundException(
+            'No product found for id '.$id
+        );
+    }
+
+    $product->setName('New product name!');
+    $entityManager->flush();
+
+    return $this->redirectToRoute('product_show', [
+        'id' => $product->getId()
+    ]);
+}
+```
+
+使用Doctrine编辑和执行：
+
++ 从Doctrine获取对象
++ 修改对象
++ 实例对象使用flush()方法
+
+可以使用$entityManager->persist($product)，但没必要，Doctrine已经查看了对象的修改内容。
+
+## 删除对象
+
+```
+$entityManager->remove($product);
+$entityManager->flush();
+```
+
+使用remove()仅通知Doctrine，并非实际操作，直到使用flush()方法DELETE才会执行。
+
