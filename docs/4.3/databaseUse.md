@@ -319,9 +319,86 @@ public function show($id)
 }
 ```
 
+### 从反方向设置信息
 
+在数据库中修改关系，必须在拥有方设置关系。
 
+多对一关系映射设置总是在拥有方，例如多对多关系可以选择拥有方。
 
+*src/Entity/Category.php*
 
+```
+class Category
+{
+    public function addProduct(Product $product): self
+    {
+        if (!$this->products->contains($product)) {
+            $this->products[] = $product;
+            $product->setCategory($this);
+        }
+        return $this;
+    }
+}
+```
 
+若想执行关联删除：
 
+*src/Entity/Category.php*
+
+```
+class Category
+{
+    public function removeProduct(Product $product): self
+    {
+        if ($this->products->contains($product)) {
+            $this->products->removeElement($product);
+            // set the owning side to null (unless already changed)
+            if ($product->getCategory() === $this) {
+                $product->setCategory(null);
+            }
+        }
+        return $this;
+    }
+}
+```
+
+若调用$category->removeProduct($product)，则Product中对应category_id会被设置为null。
+
+若想删除对应对象，需设置orphanRemoval参数：
+
+*src/Entity/Category.php*
+
+```
+   /**
+    * @ORM\OneToMany(targetEntity="App\Entity\Product", mappedBy="category", orphanRemoval=true)
+    */
+   private $products; 
+```
+
+***
+
+# Doctrine 事件
+
+Doctrine是Symfony用于处理数据库的一组php库，提供一个轻量的事件系统，在应用执行期间更改实体对象，这些事件成为生命周期事件。
+
+Doctrine触发事件之前或之后执行最常见的实体操作，例如prePersist/postPersist、preUpdate/postUpdate,和其他常见任务，例如 loadClassMetadata,onClear。
+
+不同的方式学习Doctrine事件：
+
++ 生命周期回调： 定义为实体类上的方法，并在事件触发时调用。    
++ 生命周期监听和订阅器：有一个或多个事件回调方法的类，可以被所有实体调用。
++ 事件监听：类似于生命周期监听，仅被特定的实体类调用。
+
+缺点和优点如下：
+
++ 回调有更好的性能，应为只应用于一个实体类，但是不同实体不能重用逻辑，不能访问Symfony服务。
++ 生命周期监听和订阅可以重用逻辑在不同实体之间，并且可以访问Symfony服务，但是性能不好，因为他们被所有实体调用。
++ 事件监听和生命周期监听有相同的优点，有更好的性能，因为他们只被一个实体调用。
+
+文章仅解释当在Symfony应用中使用Doctrine事件的基础内容，可以查看[更多内容](https://www.doctrine-project.org/projects/doctrine-orm/en/2.6/reference/events.html)。
+
+MongoDB使用ODM，阅读[DoctrineMongoDB Bundle文档](https://symfony.com/doc/current/bundles/DoctrineMongoDBBundle/index.html)。
+
+## Doctrine 生命周期回调
+
+生命周期回调定义为要修改的实体的方法
