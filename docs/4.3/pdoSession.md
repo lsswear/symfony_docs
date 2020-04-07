@@ -1,0 +1,4 @@
+# 使用PdoSessionHandler存储session数据到数据库
+
+Symfony默认session存储写入文件。大型网站存储session使用数据库，因为数据库在多个web服务器环境中更容易使用和扩展。
+
