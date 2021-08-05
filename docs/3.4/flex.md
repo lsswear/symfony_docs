@@ -55,7 +55,7 @@ Flex配置定义在mainfest.json文件，可包含任何数量的其他文件和
 }
 ```
 
-aliases选项允许安装包时使用的名称并且容易记住。
+aliases选项允许安装包时使用容易记住的名称,composer require mailer 和 composer require symfony/swiftmailer-bundle 相比。
 
 bundles选项告诉Flex这个配置项对应的bundle在哪些环境中自动启动，第二个参数all标识全部环境。
 
@@ -69,5 +69,7 @@ copy-from-recipe选项允许配置复制文件和文件夹向应用。
 
 Symfony Flex 配置由社区提供，并存储在两个公有存储库中：
 
-+ 
++ 主要库：高质量和维护包的配置列表。默认symfony flex 只从这个存储库读取。
+
++ 普通库： 包含社区创建的所有配置(包)。所有的配置保证可以工作，但是关联的包无人维护。Symfony Flex 在安装这些包是会询问是否要安装。
 
